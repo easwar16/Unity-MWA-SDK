@@ -1,0 +1,29 @@
+{
+    "name": "com.solana.mwa",
+    "version": "1.0.0",
+    "displayName": "Solana Mobile Wallet Adapter",
+    "description": "Unity SDK for Solana Mobile Wallet Adapter (MWA) 2.0. Provides full API parity with the React Native MWA SDK, including authorization, transaction signing, message signing, and an extensible cache layer.",
+    "unity": "2021.3",
+    "unityRelease": "0f1",
+    "documentationUrl": "https://github.com/nicoeseworthy/Unity-MWA-SDK",
+    "keywords": [
+        "solana",
+        "mobile",
+        "wallet",
+        "blockchain",
+        "web3",
+        "mwa",
+        "android"
+    ],
+    "author": {
+        "name": "Solana Mobile",
+        "url": "https://solanamobile.com"
+    },
+    "samples": [
+        {
+            "displayName": "Basic Example",
+            "description": "Example scene demonstrating all MWA SDK methods and authorization cache.",
+            "path": "Samples~/BasicExample"
+        }
+    ]
+}
