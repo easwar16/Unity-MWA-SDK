@@ -39,3 +39,6 @@ Android~/local.properties
 
 # Compiled plugin (tracked as release artifact, not source)
 Runtime/Plugins/Android/*.aar
+
+# Claude
+.claude/

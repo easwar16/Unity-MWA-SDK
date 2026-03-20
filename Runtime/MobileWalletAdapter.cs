@@ -707,9 +707,6 @@ namespace Solana.MWA
         {
             try
             {
-                // Simple manual JSON array extraction for base64 strings
-                var wrapper = JsonUtility.FromJson<StringArrayJson>($"{{\"{fieldName}_wrapper\":{json}}}");
-                // Fallback: parse manually
                 int start = json.IndexOf($"\"{fieldName}\"");
                 if (start < 0) return null;
 
@@ -811,7 +808,6 @@ namespace Solana.MWA
             public string[] features;
         }
 
-        [Serializable] private class StringArrayJson { }
 #endif
 
         private void ClearAuth()
