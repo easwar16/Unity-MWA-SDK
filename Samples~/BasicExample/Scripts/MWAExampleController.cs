@@ -295,11 +295,15 @@ public class MWAExampleController : MonoBehaviour
     private void Log(string msg)
     {
         string timeStr = DateTime.Now.ToString("HH:mm:ss");
-        OutputLog.text += $"[{timeStr}] {msg}\n";
+        string line = $"[{timeStr}] {msg}\n";
+        OutputLog.text += line;
 
-        // Auto-scroll to bottom.
-        if (OutputScrollRect != null)
-            Canvas.ForceUpdateCanvases();
+        // Keep last ~30 lines to prevent overflow
+        string[] lines = OutputLog.text.Split('\n');
+        if (lines.Length > 30)
+        {
+            OutputLog.text = string.Join("\n", lines, lines.Length - 30, 30);
+        }
     }
 
     private string Shorten(string addr)

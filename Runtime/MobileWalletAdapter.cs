@@ -111,6 +111,7 @@ namespace Solana.MWA
             try
             {
                 _bridge = new AndroidJavaClass("com.solana.mwa.unity.MWABridge");
+                _bridge.CallStatic("initialize");
             }
             catch (Exception e)
             {
@@ -202,6 +203,7 @@ namespace Solana.MWA
                 Identity.Uri,
                 Identity.Icon,
                 Identity.Name,
+                ClusterUtil.ClusterToChain(ActiveCluster),
                 CurrentAuth.AuthToken
             );
             _pollAction = "deauthorize";
@@ -246,6 +248,7 @@ namespace Solana.MWA
                 Identity.Uri,
                 Identity.Icon,
                 Identity.Name,
+                ClusterUtil.ClusterToChain(ActiveCluster),
                 authToken
             );
             _pollAction = "get_capabilities";
@@ -282,6 +285,7 @@ namespace Solana.MWA
                 Identity.Uri,
                 Identity.Icon,
                 Identity.Name,
+                ClusterUtil.ClusterToChain(ActiveCluster),
                 CurrentAuth.AuthToken,
                 encoded
             );
@@ -321,6 +325,7 @@ namespace Solana.MWA
                 Identity.Uri,
                 Identity.Icon,
                 Identity.Name,
+                ClusterUtil.ClusterToChain(ActiveCluster),
                 CurrentAuth.AuthToken,
                 encoded,
                 optionsJson
@@ -376,6 +381,7 @@ namespace Solana.MWA
                 Identity.Uri,
                 Identity.Icon,
                 Identity.Name,
+                ClusterUtil.ClusterToChain(ActiveCluster),
                 CurrentAuth.AuthToken,
                 encodedMessages,
                 encodedAddresses

@@ -110,50 +110,24 @@ public class MWAExampleSceneBuilder
         logTitleRect.offsetMin = new Vector2(15, 0);
         logTitleRect.offsetMax = new Vector2(-15, -5);
 
-        // Scroll View
-        var scrollViewGO = new GameObject("OutputScrollView");
-        scrollViewGO.transform.SetParent(logPanel.transform, false);
-        var scrollRect = scrollViewGO.AddComponent<ScrollRect>();
-        var scrollViewRect = scrollViewGO.GetComponent<RectTransform>();
-        scrollViewRect.anchorMin = new Vector2(0, 0);
-        scrollViewRect.anchorMax = new Vector2(1, 0.92f);
-        scrollViewRect.offsetMin = new Vector2(10, 10);
-        scrollViewRect.offsetMax = new Vector2(-10, -5);
-        scrollViewGO.AddComponent<Image>().color = new Color(0.06f, 0.06f, 0.08f, 1f);
-        scrollViewGO.AddComponent<Mask>().showMaskGraphic = true;
-
-        var contentGO = new GameObject("Content");
-        contentGO.transform.SetParent(scrollViewGO.transform, false);
-        var contentRect = contentGO.AddComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0, 1);
-        contentRect.anchorMax = new Vector2(1, 1);
-        contentRect.pivot = new Vector2(0.5f, 1);
-        contentRect.sizeDelta = new Vector2(0, 0);
-        contentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        var outputLog = CreateText(contentGO.transform, "OutputLog", "", 20, TextAnchor.UpperLeft, new Color(0.85f, 0.85f, 0.85f));
+        // Simple text log — no scroll view, just text filling the panel
+        var outputLog = CreateText(logPanel.transform, "OutputLog", "", 18, TextAnchor.UpperLeft, new Color(0.75f, 0.9f, 0.75f));
         var outputLogRect = outputLog.GetComponent<RectTransform>();
-        outputLogRect.anchorMin = new Vector2(0, 0);
-        outputLogRect.anchorMax = new Vector2(1, 1);
-        outputLogRect.offsetMin = new Vector2(10, 5);
-        outputLogRect.offsetMax = new Vector2(-10, -5);
-        outputLogRect.pivot = new Vector2(0.5f, 1);
+        outputLogRect.anchorMin = Vector2.zero;
+        outputLogRect.anchorMax = new Vector2(1, 0.92f);
+        outputLogRect.offsetMin = new Vector2(15, 10);
+        outputLogRect.offsetMax = new Vector2(-15, -5);
         var outputText = outputLog.GetComponent<Text>();
         outputText.supportRichText = true;
         outputText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        outputText.verticalOverflow = VerticalWrapMode.Overflow;
-
-        scrollRect.content = contentRect;
-        scrollRect.horizontal = false;
-        scrollRect.vertical = true;
-        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        outputText.verticalOverflow = VerticalWrapMode.Truncate;
 
         // Wire controller
         var controller = canvasGO.AddComponent<MWAExampleController>();
         controller.StatusLabel = statusLabel.GetComponent<Text>();
         controller.PubkeyLabel = pubkeyLabel.GetComponent<Text>();
         controller.OutputLog = outputText;
-        controller.OutputScrollRect = scrollRect;
+        controller.OutputScrollRect = null;
         controller.ClusterDropdown = clusterDropdown.GetComponent<Dropdown>();
         controller.ConnectBtn = connectBtn.GetComponent<Button>();
         controller.DisconnectBtn = disconnectBtn.GetComponent<Button>();
