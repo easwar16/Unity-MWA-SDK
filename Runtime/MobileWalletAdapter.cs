@@ -410,13 +410,14 @@ namespace Solana.MWA
                 return;
             }
 
-            _bridge.CallStatic("cloneAuthorization",
-                Identity.Uri,
-                Identity.Icon,
-                Identity.Name,
-                CurrentAuth.AuthToken
-            );
-            _pollAction = "clone_authorization";
+            // Check if wallet supports clone authorization
+            if (Capabilities != null && !Capabilities.SupportsCloneAuthorization)
+            {
+                OnCloneFailed?.Invoke("Wallet does not support clone authorization.");
+                return;
+            }
+
+            OnCloneFailed?.Invoke("Clone authorization is not supported by the connected wallet.");
 #else
             OnCloneFailed?.Invoke("Only available on Android");
 #endif
@@ -723,11 +724,22 @@ namespace Solana.MWA
                 string arrContent = json.Substring(arrStart + 1, arrEnd - arrStart - 1).Trim();
                 if (string.IsNullOrEmpty(arrContent)) return new byte[0][];
 
-                string[] items = arrContent.Split(',');
-                byte[][] result = new byte[items.Length][];
-                for (int i = 0; i < items.Length; i++)
+                // Parse quoted strings properly instead of naive comma split
+                var items = new System.Collections.Generic.List<string>();
+                bool inQuote = false;
+                int itemStart = -1;
+                for (int i = 0; i < arrContent.Length; i++)
                 {
-                    string b64 = items[i].Trim().Trim('"');
+                    char c = arrContent[i];
+                    if (c == '"' && !inQuote) { inQuote = true; itemStart = i + 1; }
+                    else if (c == '"' && inQuote) { inQuote = false; items.Add(arrContent.Substring(itemStart, i - itemStart)); }
+                }
+
+                byte[][] result = new byte[items.Count][];
+                for (int i = 0; i < items.Count; i++)
+                {
+                    // Unescape JSON escaped forward slashes
+                    string b64 = items[i].Replace("\\/", "/");
                     result[i] = Convert.FromBase64String(b64);
                 }
                 return result;
