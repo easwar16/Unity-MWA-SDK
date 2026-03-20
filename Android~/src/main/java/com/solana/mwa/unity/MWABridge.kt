@@ -1,199 +1,108 @@
 package com.solana.mwa.unity
 
-import android.app.Activity
 import android.util.Base64
 import android.util.Log
+import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import com.unity3d.player.UnityPlayer
 
 /**
  * Unity Android plugin bridge for Mobile Wallet Adapter 2.0.
  * Exposes static methods callable via JNI from Unity C#.
  *
- * All operations are async — Unity polls getStatus() to check completion.
- * Results are retrieved via getResultJson(), errors via getErrorMessage()/getErrorCode().
+ * Uses ActivityLifecycleCallbacks to create ActivityResultSender
+ * during onCreate (before STARTED state, as required by the MWA library).
  */
 object MWABridge {
 
     private const val TAG = "MWABridge"
 
     private val mwaClient = MWAClient()
+    private var sender: ActivityResultSender? = null
 
-    // ===================================================================
-    // STATUS POLLING (called from Unity C# coroutine)
-    // ===================================================================
-
-    /** Returns 0=pending, 1=success, 2=error */
-    @JvmStatic
-    fun getStatus(): Int = mwaClient.status
-
-    /** JSON string of the successful result. */
-    @JvmStatic
-    fun getResultJson(): String = mwaClient.resultJson
-
-    /** Error message from last failed operation. */
-    @JvmStatic
-    fun getErrorMessage(): String = mwaClient.errorMessage
-
-    /** MWA error code from last failed operation. */
-    @JvmStatic
-    fun getErrorCode(): Int = mwaClient.errorCode
-
-    /** Reset state for next operation. */
-    @JvmStatic
-    fun clearState() {
-        mwaClient.clearState()
+    /** Called by MWAInitProvider during Activity.onCreate */
+    fun setSender(s: ActivityResultSender) {
+        sender = s
+        Log.d(TAG, "ActivityResultSender set")
     }
 
-    private fun getActivity(): Activity? {
-        return UnityPlayer.currentActivity
+    fun clearSender() {
+        sender = null
+        mwaClient.cancelAll()
     }
+
+    @JvmStatic
+    fun initialize() {
+        // No-op: initialization is handled by MWAInitProvider ContentProvider
+        Log.d(TAG, "initialize called, sender=${if (sender != null) "ready" else "null"}")
+    }
+
+    private fun getSender(): ActivityResultSender? {
+        if (sender != null) return sender
+        Log.e(TAG, "getSender: ActivityResultSender is null. MWAInitProvider may not have run.")
+        mwaClient.setError(MWAErrorCode.NOT_INITIALIZED, "MWA not initialized. No wallet activity available.")
+        return null
+    }
+
+    // ===================================================================
+    // STATUS POLLING
+    // ===================================================================
+
+    @JvmStatic fun getStatus(): Int = mwaClient.status
+    @JvmStatic fun getResultJson(): String = mwaClient.resultJson
+    @JvmStatic fun getErrorMessage(): String = mwaClient.errorMessage
+    @JvmStatic fun getErrorCode(): Int = mwaClient.errorCode
+    @JvmStatic fun clearState() { mwaClient.clearState() }
 
     // ===================================================================
     // MWA 2.0 API METHODS
     // ===================================================================
 
-    /**
-     * Authorize dapp with wallet. If cachedAuthToken is non-empty, attempts reauthorization.
-     * Supports optional Sign In With Solana payload.
-     */
     @JvmStatic
     fun authorize(
-        identityUri: String,
-        iconPath: String,
-        identityName: String,
-        chain: String,
-        cachedAuthToken: String,
-        signInPayloadJson: String
+        identityUri: String, iconPath: String, identityName: String,
+        chain: String, cachedAuthToken: String, signInPayloadJson: String
     ) {
-        Log.d(TAG, "authorize: name=$identityName chain=$chain cached=${cachedAuthToken.isNotEmpty()}")
-        val activity = getActivity() ?: run {
-            mwaClient.setError(-1, "No activity available")
-            return
-        }
-        mwaClient.authorize(
-            activity, identityUri, iconPath, identityName,
-            chain, cachedAuthToken, signInPayloadJson
-        )
+        Log.d(TAG, "authorize: name=$identityName chain=$chain")
+        val s = getSender() ?: return
+        mwaClient.authorize(s, identityUri, iconPath, identityName, chain, cachedAuthToken, signInPayloadJson)
     }
 
-    /**
-     * Deauthorize — revoke the given auth token.
-     */
     @JvmStatic
-    fun deauthorize(
-        identityUri: String,
-        iconPath: String,
-        identityName: String,
-        authToken: String
-    ) {
+    fun deauthorize(identityUri: String, iconPath: String, identityName: String, chain: String, authToken: String) {
         Log.d(TAG, "deauthorize")
-        val activity = getActivity() ?: run {
-            mwaClient.setError(-1, "No activity available")
-            return
-        }
-        mwaClient.deauthorize(activity, identityUri, iconPath, identityName, authToken)
+        val s = getSender() ?: return
+        mwaClient.deauthorize(s, identityUri, iconPath, identityName, chain, authToken)
     }
 
-    /**
-     * Query wallet capabilities (supported methods, limits, features).
-     */
     @JvmStatic
-    fun getCapabilities(
-        identityUri: String,
-        iconPath: String,
-        identityName: String,
-        authToken: String
-    ) {
+    fun getCapabilities(identityUri: String, iconPath: String, identityName: String, chain: String, authToken: String) {
         Log.d(TAG, "getCapabilities")
-        val activity = getActivity() ?: run {
-            mwaClient.setError(-1, "No activity available")
-            return
-        }
-        mwaClient.getCapabilities(activity, identityUri, iconPath, identityName, authToken)
+        val s = getSender() ?: return
+        mwaClient.getCapabilities(s, identityUri, iconPath, identityName, chain, authToken)
     }
 
-    /**
-     * Sign transactions without sending. Payloads are base64-encoded transaction bytes.
-     */
     @JvmStatic
-    fun signTransactions(
-        identityUri: String,
-        iconPath: String,
-        identityName: String,
-        authToken: String,
-        payloadsB64: Array<String>
-    ) {
+    fun signTransactions(identityUri: String, iconPath: String, identityName: String, chain: String, authToken: String, payloadsB64: Array<String>) {
         Log.d(TAG, "signTransactions: count=${payloadsB64.size}")
-        val activity = getActivity() ?: run {
-            mwaClient.setError(-1, "No activity available")
-            return
-        }
+        val s = getSender() ?: return
         val payloads = payloadsB64.map { Base64.decode(it, Base64.DEFAULT) }.toTypedArray()
-        mwaClient.signTransactions(activity, identityUri, iconPath, identityName, authToken, payloads)
+        mwaClient.signTransactions(s, identityUri, iconPath, identityName, chain, authToken, payloads)
     }
 
-    /**
-     * Sign and send transactions. Wallet submits to the network.
-     */
     @JvmStatic
-    fun signAndSendTransactions(
-        identityUri: String,
-        iconPath: String,
-        identityName: String,
-        authToken: String,
-        payloadsB64: Array<String>,
-        optionsJson: String
-    ) {
+    fun signAndSendTransactions(identityUri: String, iconPath: String, identityName: String, chain: String, authToken: String, payloadsB64: Array<String>, optionsJson: String) {
         Log.d(TAG, "signAndSendTransactions: count=${payloadsB64.size}")
-        val activity = getActivity() ?: run {
-            mwaClient.setError(-1, "No activity available")
-            return
-        }
+        val s = getSender() ?: return
         val payloads = payloadsB64.map { Base64.decode(it, Base64.DEFAULT) }.toTypedArray()
-        mwaClient.signAndSendTransactions(
-            activity, identityUri, iconPath, identityName, authToken, payloads, optionsJson
-        )
+        mwaClient.signAndSendTransactions(s, identityUri, iconPath, identityName, chain, authToken, payloads, optionsJson)
     }
 
-    /**
-     * Sign arbitrary messages with the specified account addresses.
-     */
     @JvmStatic
-    fun signMessages(
-        identityUri: String,
-        iconPath: String,
-        identityName: String,
-        authToken: String,
-        messagesB64: Array<String>,
-        addressesB64: Array<String>
-    ) {
+    fun signMessages(identityUri: String, iconPath: String, identityName: String, chain: String, authToken: String, messagesB64: Array<String>, addressesB64: Array<String>) {
         Log.d(TAG, "signMessages: count=${messagesB64.size}")
-        val activity = getActivity() ?: run {
-            mwaClient.setError(-1, "No activity available")
-            return
-        }
+        val s = getSender() ?: return
         val messages = messagesB64.map { Base64.decode(it, Base64.DEFAULT) }.toTypedArray()
         val addressBytes = addressesB64.map { Base64.decode(it, Base64.DEFAULT) }.toTypedArray()
-        mwaClient.signMessages(
-            activity, identityUri, iconPath, identityName, authToken, messages, addressBytes
-        )
-    }
-
-    /**
-     * Clone the current authorization for sharing with another session.
-     */
-    @JvmStatic
-    fun cloneAuthorization(
-        identityUri: String,
-        iconPath: String,
-        identityName: String,
-        authToken: String
-    ) {
-        Log.d(TAG, "cloneAuthorization")
-        val activity = getActivity() ?: run {
-            mwaClient.setError(-1, "No activity available")
-            return
-        }
-        mwaClient.cloneAuthorization(activity, identityUri, iconPath, identityName, authToken)
+        mwaClient.signMessages(s, identityUri, iconPath, identityName, chain, authToken, messages, addressBytes)
     }
 }

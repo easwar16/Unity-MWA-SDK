@@ -57,3 +57,11 @@ dependencies {
     // JSON
     implementation("org.json:json:20231013")
 }
+
+// Task to copy all runtime dependencies to a folder for Unity
+tasks.register<Copy>("copyDepsToUnity") {
+    val unityPluginsDir = file("../Runtime/Plugins/Android")
+    from(configurations.named("releaseRuntimeClasspath").get().resolve())
+    into(unityPluginsDir)
+    doFirst { unityPluginsDir.mkdirs() }
+}
