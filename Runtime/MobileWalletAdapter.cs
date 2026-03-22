@@ -417,7 +417,14 @@ namespace Solana.MWA
                 return;
             }
 
-            OnCloneFailed?.Invoke("Clone authorization is not supported by the connected wallet.");
+            _bridge.CallStatic("cloneAuthorization",
+                Identity.Uri,
+                Identity.Icon,
+                Identity.Name,
+                ClusterUtil.ClusterToChain(ActiveCluster),
+                CurrentAuth.AuthToken
+            );
+            _pollAction = "clone_authorization";
 #else
             OnCloneFailed?.Invoke("Only available on Android");
 #endif

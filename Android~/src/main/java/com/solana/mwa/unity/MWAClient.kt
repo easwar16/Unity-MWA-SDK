@@ -286,9 +286,8 @@ class MWAClient {
                         Log.d(TAG, "deauthorize: success")
                     }
                     is TransactionResult.Failure -> {
-                        // Deauthorize succeeds locally even if wallet reports failure.
-                        setSuccess("{}")
-                        Log.w(TAG, "deauthorize: wallet reported failure, cleared locally")
+                        setError(classifyError(result.e), "Deauthorize failed: ${result.e.message}")
+                        Log.w(TAG, "deauthorize: wallet reported failure: ${result.e.message}")
                     }
                     else -> {
                         setSuccess("{}")

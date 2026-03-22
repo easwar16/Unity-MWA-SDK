@@ -25,6 +25,11 @@ namespace Solana.MWA
         NotCloned = -5,
         TooManyPayloads = -6,
         ClusterNotSupported = -7,
+        Busy = -8,
+        NoWalletFound = -10,
+        Timeout = -11,
+        UserDeclined = -12,
+        NotInitialized = -13,
         AttestOriginAndroid = -100
     }
 
