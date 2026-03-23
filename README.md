@@ -1,5 +1,9 @@
 # Solana Mobile Wallet Adapter — Unity SDK
 
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/6a2648cc-1e2c-4675-b144-465a7732b346" width="300" autoplay loop muted playsinline></video>
+</p>
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![MWA](https://img.shields.io/badge/MWA-2.0-green.svg)](https://github.com/solana-mobile/mobile-wallet-adapter)
 [![Unity](https://img.shields.io/badge/Unity-2021.3+-black.svg)](https://unity.com)
